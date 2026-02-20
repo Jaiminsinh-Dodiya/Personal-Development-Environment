@@ -1,0 +1,16 @@
+{
+  "xampp_dir": "C:\\path\\to\\your\\xampp\\",
+  "stacks": {
+    "cs": {
+      "label": "C# Example",
+      "path": "C:\\path\\to\\your\\project.slnx",
+      "apps": ["notepad.exe"]
+    },
+    "ajava": {
+      "label": "Java Example",
+      "path": "C:\\path\\to\\eclipse.exe",
+      "scripts": ["mysql_start.bat"],
+      "url": "http://localhost/phpmyadmin"
+    }
+  }
+}
