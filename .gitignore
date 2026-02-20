@@ -1,0 +1,8 @@
+# Ignore compiled binaries
+bin/
+*.exe
+*.obj
+*.pdb
+
+# Ignore local config if it contains private paths
+config/college.json
