@@ -4,6 +4,8 @@
 #include <filesystem>
 #include <optional>
 #include <string>
+#include <vector>
+#include <utility>
 
 using json = nlohmann::json;
 
@@ -30,6 +32,11 @@ namespace ProjectService {
     // Reads: HKLM\SOFTWARE\EpicGames\Unreal Engine\<version>\InstalledDirectory
     // Returns the engine root path if found, nullopt otherwise.
     std::optional<std::filesystem::path> DetectEngineFromRegistry(const std::string& version);
+
+    // Returns a list of { version_string, install_path } pairs for every UE
+    // version currently installed on this machine (read from registry).
+    // Returns an empty vector if none are found.
+    std::vector<std::pair<std::string, std::filesystem::path>> GetAllInstalledEngineVersions();
 
     // ── Config I/O ────────────────────────────────────────────
 

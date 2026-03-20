@@ -56,6 +56,47 @@ std::optional<std::filesystem::path> DetectEngineFromRegistry(const std::string&
     return std::filesystem::path(buffer);
 }
 
+// ── All Installed Engine Versions ─────────────────────────────
+std::vector<std::pair<std::string, std::filesystem::path>> GetAllInstalledEngineVersions() {
+    constexpr const char* parentKey = "SOFTWARE\\EpicGames\\Unreal Engine";
+    std::vector<std::pair<std::string, std::filesystem::path>> results;
+
+    auto tryOpenParent = [&](REGSAM flags) -> HKEY {
+        HKEY h = nullptr;
+        RegOpenKeyExA(HKEY_LOCAL_MACHINE, parentKey, 0, flags, &h);
+        return h;
+    };
+
+    HKEY hParent = tryOpenParent(KEY_READ | KEY_ENUMERATE_SUB_KEYS | KEY_WOW64_64KEY);
+    if (!hParent) hParent = tryOpenParent(KEY_READ | KEY_ENUMERATE_SUB_KEYS | KEY_WOW64_32KEY);
+    if (!hParent) hParent = tryOpenParent(KEY_READ | KEY_ENUMERATE_SUB_KEYS);
+    if (!hParent) return results;
+
+    // Enumerate every subkey (each is one installed engine version)
+    DWORD index = 0;
+    char subkeyName[256];
+    DWORD nameLen;
+    while (true) {
+        nameLen = sizeof(subkeyName);
+        LONG ret = RegEnumKeyExA(hParent, index++, subkeyName, &nameLen,
+                                 nullptr, nullptr, nullptr, nullptr);
+        if (ret == ERROR_NO_MORE_ITEMS) break;
+        if (ret != ERROR_SUCCESS)       continue;
+
+        std::string versionStr(subkeyName, nameLen);
+        auto pathOpt = DetectEngineFromRegistry(versionStr);
+        if (pathOpt) {
+            results.emplace_back(versionStr, *pathOpt);
+        }
+    }
+    RegCloseKey(hParent);
+
+    // Sort by version string so output is predictable
+    std::sort(results.begin(), results.end(),
+              [](const auto& a, const auto& b){ return a.first < b.first; });
+    return results;
+}
+
 // ── Config Load ───────────────────────────────────────────────
 std::optional<json> LoadProjectConfig() {
     std::filesystem::path configPath =
