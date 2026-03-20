@@ -20,7 +20,9 @@ public:
         }
     };
 
-    // Launch a file, app, URL, or script via ShellExecuteA.
+    // Launch a file, app, URL, or script.
+    // By default, uses CreateProcessA with DETACHED_PROCESS for executables
+    // so the PDE CLI doesn't hang. Falls back to ShellExecuteA.
     // Returns true on success.
     static bool Open(const std::filesystem::path& path,
                      OpenOptions opts = {});

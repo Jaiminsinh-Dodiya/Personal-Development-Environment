@@ -1,35 +1,34 @@
-# PDE Architecture Overhaul — Phased Rollout
+# Advanced Unreal Engine Architecture — Phased Rollout
 
-## Phase 1: "The Split" — Multi-file layout + build script
-> Split [pde_core.cpp](file:///d:/PDE/src/pde_core.cpp) → separate files. Build still works. Behavior unchanged.
-- [x] Create `src/core/colors.h`
-- [x] Create `src/core/system_service.h` + `.cpp`
-- [x] Create `src/core/ipde_module.h`
-- [x] Create `src/core/icommand.h`
-- [x] Refactor CollegeModule → `src/modules/college/` (module + command)
-- [x] Rewrite `main.cpp` with two-level dispatcher (module → command)
-- [x] Create `build.ps1` (auto-finds VS 2022 from any PS window)
-- [x] Verify: builds cleanly (4 sources, zero errors)
-- [x] Git commit & push: `feat: multi-file plugin architecture`
+## Phase 1: Core Overhaul (Robustness & Safety) ✅
+- [x] Directory Climbing: `ProjectService::FindUProject()` traverses up to drive root
+- [x] KEY_WOW64_64KEY registry fix: tries 64-bit view first, then 32-bit fallback
+- [x] Atomic.pde_tmp Transaction: `SaveProjectConfigTransaction` + `CommitProjectConfigTransaction`
+- [x] Detached Processes: `SystemService::Open()` uses `CreateProcessA` + `DETACHED_PROCESS`
+- [x] CreateProcessA mutable buffer fix: `std::vector<char>` for command string
+- [x] Path normalization: all JSON paths stored with `.generic_string()` (forward slashes)
+- [x] Safe Init: overwrite prompt (`[y/N]` before re-initializing existing config)
 
-## Phase 2: "The Brain" — Project-awareness + ProjectService
-> Add `pde init`-style context. `.pde/` folder, project discovery.
-- [x] Create `src/services/project_service.h` + `.cpp`
-- [x] UE registry auto-detection logic (RegOpenKeyExA, 32+64-bit views)
-- [x] Verify: builds cleanly (5 sources, zero errors)
-- [x] Git commit & push: `feat: project-aware context service`
+## Phase 2: Smart Init (Version Mismatch Handling)
+> Query all installed UE versions. Offer fallback if the project version is missing.
+- [ ] Implement `GetAllInstalledEngineVersions()` in `ProjectService`
+- [ ] Update `InitCommand` to use fallback selection if target version not found
+- [ ] Save `bound_engine_version` alongside `engine_version` in `project.json`
 
-## Phase 3: "The Unreal Module" — ue init / build / clean
-> Wire up the Unreal commands using ProjectService.
-- [x] Create `src/modules/unreal/unreal_module.h` + `.cpp`
-- [x] Create `init_command`, `build_command`, `clean_command`
-- [x] Dry-run support for `clean`
-- [x] Verify: full `pde ue init` → `pde ue clean` flow
-- [x] Git commit & push: `feat: Unreal Engine module`
+## Phase 3: Project Launchers
+> spawn editor and IDE without freezing the terminal.
+- [ ] `rebuild` command (clean then build)
+- [ ] `open editor` command (launches `UnrealEditor.exe <uproject>`)
+- [ ] `open ide` command (finds `.sln`/`.slnx` and opens)
+- [ ] `open project` command (runs both in parallel)
 
-## Phase 4: "The Polish" — Help system + PowerShell profile
-> Auto-generated help, updated shell integration.
-- [x] Auto-generated `--help` from module/command metadata
-- [x] Update `Microsoft.PowerShell_profile.ps1`
-- [x] Final build + full regression test
-- [x] Git commit & push: `feat: help system + shell integration`
+## Phase 4: Code Generators
+> Generate boilerplate C++ and JSON for modules and plugins.
+- [ ] `create plugin <PluginName>` command
+- [ ] `create module <ModuleName> <ModuleType> [PluginName]` command
+- [ ] Safe `.uproject`/`.uplugin` JSON injection (check if "Modules" key exists first)
+
+## Phase 5: Testing & Polish
+- [ ] End-to-end verify `DETACHED_PROCESS` (CLI exits immediately)
+- [ ] End-to-end verify `.pde_tmp` transaction
+- [ ] Git commit & push `feature/advanced-ue-module`
