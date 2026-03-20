@@ -6,6 +6,8 @@
 #include "modules/unreal/open_editor_command.h"
 #include "modules/unreal/open_ide_command.h"
 #include "modules/unreal/open_project_command.h"
+#include "modules/unreal/create_plugin_command.h"
+#include "modules/unreal/create_module_command.h"
 
 UnrealModule::UnrealModule() {
     commands_.push_back(std::make_unique<InitCommand>());
@@ -15,11 +17,13 @@ UnrealModule::UnrealModule() {
     commands_.push_back(std::make_unique<OpenEditorCommand>());
     commands_.push_back(std::make_unique<OpenIdeCommand>());
     commands_.push_back(std::make_unique<OpenProjectCommand>());
+    commands_.push_back(std::make_unique<CreatePluginCommand>());
+    commands_.push_back(std::make_unique<CreateModuleCommand>());
 }
 
 std::string UnrealModule::GetName()        const { return "ue"; }
 std::string UnrealModule::GetDescription() const {
-    return "Unreal Engine project management (init, build, rebuild, clean, open editor/ide/project)";
+    return "Unreal Engine project management (init, build, rebuild, clean, open, create plugin/module)";
 }
 
 const std::vector<std::unique_ptr<ICommand>>& UnrealModule::GetCommands() const {
