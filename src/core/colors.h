@@ -13,4 +13,5 @@ namespace Color {
     constexpr std::string_view BLUE    = "\033[34m";
     constexpr std::string_view MAGENTA = "\033[35m";
     constexpr std::string_view CYAN    = "\033[36m";
+    constexpr const char* GRAY = "\033[90m";
 }

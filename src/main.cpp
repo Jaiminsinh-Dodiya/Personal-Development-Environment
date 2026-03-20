@@ -1,6 +1,7 @@
 #include "core/colors.h"
 #include "core/ipde_module.h"
 #include "modules/college/college_module.h"
+#include "modules/unreal/unreal_module.h"
 
 #include <iostream>
 #include <string>
@@ -28,7 +29,7 @@ int main(int argc, char* argv[]) {
     // ── 1. Module Registry ───────────────────────────────────
     std::vector<std::unique_ptr<IPdeModule>> modules;
     modules.push_back(std::make_unique<CollegeModule>());
-    // Future: modules.push_back(std::make_unique<UnrealModule>());
+    modules.push_back(std::make_unique<UnrealModule>());
 
     if (argc < 2) {
         std::cout << Color::CYAN << Color::BOLD

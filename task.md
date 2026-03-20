@@ -21,11 +21,11 @@
 
 ## Phase 3: "The Unreal Module" — ue init / build / clean
 > Wire up the Unreal commands using ProjectService.
-- [ ] Create `src/modules/unreal/unreal_module.h` + [.cpp](file:///d:/PDE/src/pde_core.cpp)
-- [ ] Create `init_command`, `build_command`, `clean_command`
-- [ ] Dry-run support for `clean`
-- [ ] Verify: full `pde ue init` → `pde ue clean` flow
-- [ ] Git commit & push: `feat: Unreal Engine module`
+- [x] Create `src/modules/unreal/unreal_module.h` + `.cpp`
+- [x] Create `init_command`, `build_command`, `clean_command`
+- [x] Dry-run support for `clean`
+- [x] Verify: full `pde ue init` → `pde ue clean` flow
+- [x] Git commit & push: `feat: Unreal Engine module`
 
 ## Phase 4: "The Polish" — Help system + PowerShell profile
 > Auto-generated help, updated shell integration.
