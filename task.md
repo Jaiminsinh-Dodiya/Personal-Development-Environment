@@ -29,7 +29,7 @@
 
 ## Phase 4: "The Polish" — Help system + PowerShell profile
 > Auto-generated help, updated shell integration.
-- [ ] Auto-generated `--help` from module/command metadata
-- [ ] Update [Microsoft.PowerShell_profile.ps1](file:///d:/PDE/Microsoft.PowerShell_profile.ps1)
-- [ ] Final build + full regression test
-- [ ] Git commit & push: `feat: help system + shell integration`
+- [x] Auto-generated `--help` from module/command metadata
+- [x] Update `Microsoft.PowerShell_profile.ps1`
+- [x] Final build + full regression test
+- [x] Git commit & push: `feat: help system + shell integration`

@@ -21,6 +21,33 @@ static void enableAnsiColors() {
 }
 
 // ============================================================
+//  AUTO-GENERATED HELP
+// ============================================================
+static void printHelp(const std::vector<std::unique_ptr<IPdeModule>>& modules) {
+    std::cout << Color::CYAN << Color::BOLD
+              << "--- Jaimin's PDE Core ---"
+              << Color::RESET << "\n\n"
+              << Color::GREEN << "Usage: " << Color::RESET
+              << "pde <module> [command] [args...]\n\n";
+
+    for (const auto& module : modules) {
+        std::cout << Color::YELLOW << Color::BOLD << module->GetName()
+                  << Color::RESET << " - " << module->GetDescription() << '\n';
+
+        for (const auto& cmd : module->GetCommands()) {
+            std::cout << "  " << Color::CYAN << cmd->GetName() << Color::RESET;
+            
+            // Pad for alignment
+            int padding = 15 - static_cast<int>(cmd->GetName().length());
+            if (padding > 0) std::cout << std::string(padding, ' ');
+
+            std::cout << cmd->GetHelp() << '\n';
+        }
+        std::cout << '\n';
+    }
+}
+
+// ============================================================
 //  MAIN — Two-Level Dispatcher (Module → Command)
 // ============================================================
 int main(int argc, char* argv[]) {
@@ -32,15 +59,18 @@ int main(int argc, char* argv[]) {
     modules.push_back(std::make_unique<UnrealModule>());
 
     if (argc < 2) {
-        std::cout << Color::CYAN << Color::BOLD
-                  << "--- Jaimin's PDE Core ---"
-                  << Color::RESET << '\n'
-                  << Color::GREEN << "Usage: " << Color::RESET
-                  << "pde <module> [command] [args...]\n";
-        return EXIT_FAILURE;
+        printHelp(modules);
+        return EXIT_SUCCESS;
     }
 
     std::string moduleName(argv[1]);
+    
+    // Global help flag
+    if (moduleName == "--help" || moduleName == "-h") {
+        printHelp(modules);
+        return EXIT_SUCCESS;
+    }
+
     std::vector<std::string> remaining(argv + 2, argv + argc);
 
     // ── 2. Two-Level Dispatch ────────────────────────────────

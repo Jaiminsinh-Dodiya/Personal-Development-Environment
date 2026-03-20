@@ -1,15 +1,9 @@
-function open {
-    param(
-        [Parameter(Mandatory, Position = 0)]
-        [string]$Category,
+# ──────────────────────────────────────────────────────────────
+#  PDE Core — Global Shell Integration
+# ──────────────────────────────────────────────────────────────
 
-        [Parameter(Position = 1)]
-        [string]$Tech,
-
-        [Parameter(Position = 2)]
-        [string]$Faculty
-    )
-
+# 1. Native access: `pde`
+function pde {
     $exe = "D:\PDE\bin\pde_core.exe"
 
     if (-not (Test-Path $exe)) {
@@ -17,10 +11,18 @@ function open {
         return
     }
 
-    # Build args dynamically — avoids passing empty strings to the C++ side
-    $argList = @($Category)
-    if ($Tech)    { $argList += $Tech }
-    if ($Faculty) { $argList += $Faculty }
+    & $exe @args
+}
 
-    & $exe @argList
+# 2. Backwards compatibility: `open <stack>`
+# Maps to `pde college open <stack>`
+function open {
+    # If called with no args, just run `pde` to show help
+    if ($args.Count -eq 0) {
+        pde
+        return
+    }
+
+    # Pass all arguments to the college open command
+    pde college open @args
 }
