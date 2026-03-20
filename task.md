@@ -10,14 +10,14 @@
 - [x] Rewrite `main.cpp` with two-level dispatcher (module → command)
 - [x] Create `build.ps1` (auto-finds VS 2022 from any PS window)
 - [x] Verify: builds cleanly (4 sources, zero errors)
-- [ ] Git commit & push: `feat: multi-file plugin architecture`
+- [x] Git commit & push: `feat: multi-file plugin architecture`
 
 ## Phase 2: "The Brain" — Project-awareness + ProjectService
 > Add `pde init`-style context. `.pde/` folder, project discovery.
-- [/] Create `src/services/project_service.h` + `.cpp`
-- [ ] UE registry auto-detection logic
-- [ ] Verify: `ProjectService::FindUProject()` works
-- [ ] Git commit & push: `feat: project-aware context service`
+- [x] Create `src/services/project_service.h` + `.cpp`
+- [x] UE registry auto-detection logic (RegOpenKeyExA, 32+64-bit views)
+- [x] Verify: builds cleanly (5 sources, zero errors)
+- [x] Git commit & push: `feat: project-aware context service`
 
 ## Phase 3: "The Unreal Module" — ue init / build / clean
 > Wire up the Unreal commands using ProjectService.
