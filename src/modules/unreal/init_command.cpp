@@ -12,6 +12,19 @@ std::string InitCommand::GetHelp() const {
 
 void InitCommand::Execute(const std::vector<std::string>& /*args*/,
                           bool dryRun) const {
+    // ── 0. Prevent Accidental Overwrite ───────────────────────
+    if (ProjectService::LoadProjectConfig().has_value()) {
+        std::cout << Color::YELLOW
+                  << "A project configuration already exists. Do you want to re-initialize? [y/N]: "
+                  << Color::RESET;
+        std::string ans;
+        std::getline(std::cin, ans);
+        if (ans != "y" && ans != "Y") {
+            std::cout << "Initialization aborted.\n";
+            return;
+        }
+    }
+
     // ── 1. Find .uproject ─────────────────────────────────────
     auto uprojectOpt = ProjectService::FindUProject();
     if (!uprojectOpt) {
@@ -62,11 +75,11 @@ void InitCommand::Execute(const std::vector<std::string>& /*args*/,
         }
     }
 
-    // ── 4. Build config JSON ───────────────────────────────────
+    // ── 4. Build config JSON (with Path Normalization) ─────────
     json config = {
         {"engine_version", version},
-        {"project_name",   uproject.stem().string()},
-        {"project_file",   uproject.filename().string()}
+        {"project_name",   uproject.stem().generic_string()},
+        {"project_file",   uproject.filename().generic_string()}
         // Note: engine path is intentionally NOT stored — it is
         // resolved at runtime via the registry so the config is
         // portable across machines with different drive letters.
@@ -79,9 +92,14 @@ void InitCommand::Execute(const std::vector<std::string>& /*args*/,
         return;
     }
 
-    if (ProjectService::SaveProjectConfig(config)) {
-        std::cout << Color::GREEN << Color::BOLD
-                  << "  .pde/project.json created successfully."
-                  << Color::RESET << '\n';
+    if (ProjectService::SaveProjectConfigTransaction(config)) {
+        if (ProjectService::CommitProjectConfigTransaction()) {
+            std::cout << Color::GREEN << Color::BOLD
+                      << "  .pde/project.json created successfully."
+                      << Color::RESET << '\n';
+        } else {
+            std::cerr << Color::RED << "Error: Failed to commit .pde transaction."
+                      << Color::RESET << '\n';
+        }
     }
 }

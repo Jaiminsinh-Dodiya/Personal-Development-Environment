@@ -36,8 +36,12 @@ namespace ProjectService {
     // Load .pde/project.json from CWD. Returns nullopt if missing or invalid.
     std::optional<json> LoadProjectConfig();
 
-    // Write json to .pde/project.json in CWD (creates .pde/ if needed).
-    // Returns true on success.
-    bool SaveProjectConfig(const json& config);
+    // Write json to .pde_tmp/project.json in CWD (creates .pde_tmp/ if needed).
+    // Returns true on success. This is part of the transaction pattern.
+    bool SaveProjectConfigTransaction(const json& config);
+
+    // Promotes .pde_tmp to .pde, fully committing the initialization.
+    // Automatically cleans up any old .pde folder safely.
+    bool CommitProjectConfigTransaction();
 
 } // namespace ProjectService

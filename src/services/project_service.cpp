@@ -8,12 +8,22 @@
 namespace ProjectService {
 
 // ── Project Discovery ─────────────────────────────────────────
+// Climbs up the directory tree until it finds a .uproject file.
 std::optional<std::filesystem::path> FindUProject() {
+    std::filesystem::path current = std::filesystem::current_path();
     std::error_code ec;
-    for (const auto& entry : std::filesystem::directory_iterator(
-             std::filesystem::current_path(), ec)) {
-        if (entry.is_regular_file() && entry.path().extension() == ".uproject")
-            return entry.path();
+
+    while (true) {
+        for (const auto& entry : std::filesystem::directory_iterator(current, ec)) {
+            if (entry.is_regular_file() && entry.path().extension() == ".uproject") {
+                return entry.path();
+            }
+        }
+        
+        std::filesystem::path parent = current.parent_path();
+        // If we've hit the root (e.g. C:\) and parent == current, stop searching.
+        if (parent == current) break;
+        current = parent;
     }
     return std::nullopt;
 }
@@ -29,9 +39,9 @@ std::optional<std::filesystem::path> DetectEngineFromRegistry(const std::string&
         return hKey;
     };
 
-    // Try 32-bit registry view first (where Epic usually writes),
-    // then fall back to the native 64-bit view.
-    HKEY hKey = tryOpen(KEY_READ | KEY_WOW64_32KEY);
+    // Try explicit 64-bit view (since UE is 64-bit), then fallback to 32-bit view
+    HKEY hKey = tryOpen(KEY_READ | KEY_WOW64_64KEY);
+    if (!hKey) hKey = tryOpen(KEY_READ | KEY_WOW64_32KEY);
     if (!hKey) hKey = tryOpen(KEY_READ);
     if (!hKey) return std::nullopt;
 
@@ -65,34 +75,71 @@ std::optional<json> LoadProjectConfig() {
     }
 }
 
-// ── Config Save ───────────────────────────────────────────────
-bool SaveProjectConfig(const json& config) {
-    std::filesystem::path pdeDir =
-        std::filesystem::current_path() / PDE_DIR;
+// ── Config Save (Atomic Transaction) ──────────────────────────
+bool SaveProjectConfigTransaction(const json& config) {
+    std::filesystem::path pdeTmpDir = std::filesystem::current_path() / ".pde_tmp";
 
-    // Create .pde/ if it doesn't exist yet
-    if (!std::filesystem::exists(pdeDir)) {
+    // 1. Wipe old tmp dir if it exists from a crashed run
+    if (std::filesystem::exists(pdeTmpDir)) {
         std::error_code ec;
-        std::filesystem::create_directory(pdeDir, ec);
+        std::filesystem::remove_all(pdeTmpDir, ec);
+    }
+
+    std::error_code ec;
+    std::filesystem::create_directory(pdeTmpDir, ec);
+    if (ec) {
+        std::cerr << Color::RED << "Error: Could not create .pde_tmp directory: " 
+                  << ec.message() << Color::RESET << '\n';
+        return false;
+    }
+
+    std::filesystem::path configPath = pdeTmpDir / CONFIG_FILE;
+
+    // 2. Serialize memory to string (Normalize strings in config before passing here if needed)
+    std::string jsonStr = config.dump(2) + "\n";
+
+    // 3. Write to temp file safely
+    std::ofstream f(configPath, std::ios::trunc);
+    if (!f.is_open()) {
+        std::cerr << Color::RED << "Error: Could not write temporary file " << configPath
+                  << Color::RESET << '\n';
+        return false;
+    }
+    f << jsonStr;
+    f.close();
+
+    return true;
+}
+
+// Promotes .pde_tmp to .pde
+bool CommitProjectConfigTransaction() {
+    std::filesystem::path pdeTmpDir = std::filesystem::current_path() / ".pde_tmp";
+    std::filesystem::path pdeDir    = std::filesystem::current_path() / PDE_DIR;
+
+    if (!std::filesystem::exists(pdeTmpDir)) {
+        return false; // Nothing to commit
+    }
+
+    std::error_code ec;
+    
+    // 1. Delete existing .pde folder
+    if (std::filesystem::exists(pdeDir)) {
+        std::filesystem::remove_all(pdeDir, ec);
         if (ec) {
-            std::cerr << Color::RED
-                      << "Error: Could not create " << PDE_DIR
-                      << " directory: " << ec.message()
-                      << Color::RESET << '\n';
+            std::cerr << Color::RED << "Error: Could not remove old .pde directory: "
+                      << ec.message() << Color::RESET << '\n';
             return false;
         }
     }
 
-    std::filesystem::path configPath = pdeDir / CONFIG_FILE;
-    std::ofstream f(configPath);
-    if (!f.is_open()) {
-        std::cerr << Color::RED
-                  << "Error: Could not write " << configPath
-                  << Color::RESET << '\n';
+    // 2. Rename .pde_tmp to .pde
+    std::filesystem::rename(pdeTmpDir, pdeDir, ec);
+    if (ec) {
+        std::cerr << Color::RED << "Error: Failed to commit transaction (rename failed): "
+                  << ec.message() << Color::RESET << '\n';
         return false;
     }
 
-    f << config.dump(2) << '\n';
     return true;
 }
 
