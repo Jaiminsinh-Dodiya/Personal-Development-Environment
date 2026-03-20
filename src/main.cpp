@@ -4,6 +4,7 @@
 #include "modules/unreal/unreal_module.h"
 
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
 #include <memory>
@@ -79,29 +80,60 @@ int main(int argc, char* argv[]) {
 
         const auto& commands = module->GetCommands();
 
-        // Try to match argv[2] against a command name
+        // ── Multi-word command matching ───────────────────────
+        // Command names can be multi-word (e.g. "open editor", "create plugin").
+        // We split each command's name on spaces and try to match against
+        // the start of `remaining`. We pick the LONGEST match to avoid
+        // ambiguity (e.g. "open" vs "open editor").
+        const ICommand* bestMatch   = nullptr;
+        size_t          bestWordCount = 0;
+
         if (!remaining.empty()) {
             for (const auto& cmd : commands) {
-                if (cmd->GetName() == remaining[0]) {
-                    // Matched! Pass argv[3:] as args to the command.
-                    std::vector<std::string> cmdArgs(
-                        remaining.begin() + 1, remaining.end());
-                    cmd->Execute(cmdArgs);
-                    return EXIT_SUCCESS;
+                // Tokenize the command name
+                std::vector<std::string> nameParts;
+                std::istringstream ss(cmd->GetName());
+                std::string part;
+                while (ss >> part) nameParts.push_back(part);
+
+                // Does `remaining` start with all of nameParts?
+                if (nameParts.empty() || nameParts.size() > remaining.size()) continue;
+
+                bool match = true;
+                for (size_t i = 0; i < nameParts.size(); ++i) {
+                    if (remaining[i] != nameParts[i]) { match = false; break; }
+                }
+
+                // Keep the longest matching command name
+                if (match && nameParts.size() > bestWordCount) {
+                    bestMatch     = cmd.get();
+                    bestWordCount = nameParts.size();
                 }
             }
         }
 
-        // No command matched — fall through to the default
-        // (first) command with ALL remaining args.
-        if (!commands.empty()) {
-            commands[0]->Execute(remaining);
+        if (bestMatch) {
+            // Pass everything AFTER the matched command name as args
+            std::vector<std::string> cmdArgs(
+                remaining.begin() + static_cast<int>(bestWordCount), remaining.end());
+            bestMatch->Execute(cmdArgs, false);
             return EXIT_SUCCESS;
         }
 
-        std::cerr << Color::RED
-                  << "Module \"" << moduleName << "\" has no commands."
-                  << Color::RESET << '\n';
+        // No command matched — show helpful error instead of silently
+        // running the first command (that was causing the init bug)
+        if (remaining.empty()) {
+            std::cerr << Color::YELLOW
+                      << "No command specified for module \"" << moduleName << "\".\n"
+                      << Color::RESET;
+        } else {
+            std::cerr << Color::RED
+                      << "Unknown command: \"" << remaining[0] << "\" in module \""
+                      << moduleName << "\".\n"
+                      << Color::RESET;
+        }
+        std::cerr << Color::CYAN << "Run 'pde --help' to see available commands.\n"
+                  << Color::RESET;
         return EXIT_FAILURE;
     }
 
