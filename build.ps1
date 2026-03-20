@@ -1,4 +1,4 @@
-﻿# ──────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────
 #  PDE Core — Build Script   (works from any PS window)
 # ──────────────────────────────────────────────────────
 $ErrorActionPreference = "Stop"
@@ -28,7 +28,7 @@ Write-Host ""; Write-Host "  Compiling PDE Core..." -ForegroundColor Cyan
 Write-Host "  Sources : $($sources.Count) files" -ForegroundColor DarkGray; Write-Host ""
 
 # 4. Compile
-& cl /nologo /EHsc /std:c++17 /I"includes" /I"src" $sources /Fe:"bin\pde_core.exe" /Fo:"bin\" Shell32.lib
+& cl /nologo /EHsc /std:c++17 /I"includes" /I"src" $sources /Fe:"bin\pde_core.exe" /Fo:"bin\" Shell32.lib Advapi32.lib
 
 if ($LASTEXITCODE -eq 0) { Write-Host ""; Write-Host "  Build successful: bin\pde_core.exe" -ForegroundColor Green; Write-Host "" }
 else { Write-Host ""; Write-Host "  Build FAILED" -ForegroundColor Red; Write-Host ""; exit 1 }
